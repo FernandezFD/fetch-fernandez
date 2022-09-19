@@ -1,20 +1,22 @@
+
 let carrito = JSON.parse(localStorage.getItem("carrito"))||[];
+
 let productosJSON = [];
 let dolarVenta;
 let lista
 
-//Evento-Cuando la ventana está cargada
+
 window.onload=()=>{
     lista=document.getElementById("milista");
     document.getElementById("fila_prueba").style.background="white";
     obtenerValorDolar();
-    //selector y evento change
+
     document.getElementById("miSeleccion").setAttribute("option", "pordefecto");
     document.getElementById("miSeleccion").onchange=()=>ordenar();
 };
 
 function renderizarProductos() {
-    //renderizamos los productos 
+
     console.log(productosJSON)
     for (const prod of productosJSON) {
         lista.innerHTML+=(`<li class="col-sm-3 list-group-item">
@@ -26,9 +28,9 @@ function renderizarProductos() {
         <button class="btn btn-danger" id='btn${prod.id}'>COMPRAR</button>
     </li>`);
     }
-    //EVENTOS
+
     productosJSON.forEach(prod=> {
-         //Evento para cada boton
+
          document.getElementById(`btn${prod.id}`).onclick= function() {
             agregarACarrito(prod);
         };
@@ -50,7 +52,7 @@ function agregarACarrito(productoNuevo) {
             productoNuevo.nombre,
             'success'
         );
-        //agregamos una nueva fila a la tabla de carrito
+
         document.getElementById("tablabody").innerHTML+=(`
             <tr id='fila${prodACarrito.id}'>
             <td> ${prodACarrito.id} </td>
@@ -59,15 +61,14 @@ function agregarACarrito(productoNuevo) {
             <td> ${prodACarrito.precio}</td>
             <td> <button class='btn btn-light' onclick='eliminar(${prodACarrito.id})'>🗑️</button>`);
     } else {
-        //el producto ya existe en el carro
-        //pido al carro la posicion del producto 
+ 
         let posicion = carrito.findIndex(p => p.id == productoNuevo.id);
         console.log(posicion);
         carrito[posicion].cantidad += 1;
-        //con querySelector falla
+
         document.getElementById(productoNuevo.id).innerHTML=carrito[posicion].cantidad;
     }
-    //siempre debo recalcular el total
+
     document.getElementById("gastoTotal").innerText=(`Total: $ ${calcularTotal()}`);
     localStorage.setItem("carrito",JSON.stringify(carrito));
 }
@@ -82,9 +83,9 @@ function calcularTotal() {
 
 function eliminar(id){
     let indice=carrito.findIndex(prod => prod.id==id);
-    carrito.splice(indice,1);//eliminando del carro
+    carrito.splice(indice,1);
     let fila=document.getElementById(`fila${id}`);
-    document.getElementById("tablabody").removeChild(fila);//eliminando de la tabla
+    document.getElementById("tablabody").removeChild(fila);
     document.getElementById("gastoTotal").innerText=(`Total: $ ${calcularTotal()}`);
     localStorage.setItem("carrito",JSON.stringify(carrito));
     Swal.fire("Producto eliminado del carro!")
@@ -110,24 +111,51 @@ function ordenar() {
     renderizarProductos();
 }
 
-//GETJSON de productos.json
+
 async function obtenerJSON() {
     const URLJSON="productos.json"
     const resp=await fetch(URLJSON)
     const data= await resp.json()
     productosJSON = data;
-    //ya tengo el dolar y los productos, renderizo las cartas
+
     renderizarProductos();
 }
 
 
-//function para obtener el valor del dolar blue en tiempo real
+
 async function obtenerValorDolar() {
     const URLDOLAR = "https://api-dolar-argentina.herokuapp.com/api/dolarblue";
     const resp=await fetch(URLDOLAR)
     const data=await resp.json()
     document.getElementById("fila_prueba").innerHTML+=(`<p align="center">Dolar compra: $ ${data.compra}  Dolar venta: $ ${data.venta}</p>`);
     dolarVenta = data.venta;
-    //ya tengo los datos del dolar, llamo al json
     obtenerJSON();
+}
+
+let finalizar=document.getElementById("finalizar");
+finalizar.onclick=()=>{
+    Swal.fire({
+        title: 'Compra confirmada',
+        text: 'Estamos preparando su envio',
+
+        imageWidth: 170,
+        imageHeight: 160,
+        imageAlt: 'ok',
+    });
+    //borrar tabla, array carrito y local storage
+    
+    //Toastify
+    Toastify({
+        text:"Gracias por tu compra",
+        duration:2500,
+        gravity:"top",
+        position:"right"
+    }).showToast();
+
+    //LUXON
+    //AL momento de cerrar la compra...
+    const fin=DateTime.now();
+    const Interval=luxon.Interval;
+    const tiempo=Interval.fromDateTimes(inicio,fin);
+    console.log("Tardaste "+tiempo.length('minutes')+" minutos en cerrar la compra!");
 }
